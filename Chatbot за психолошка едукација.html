@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Чатбот за психолошка едукација и подршка на млади 🧠</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #81c784;
+            color: white;
+            padding: 16px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+        .topics {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px;
+            background: #e6f2e6;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #ccc;
+        }
+        .topic-btn {
+            background: #a5d6a7;
+            border-radius: 15px;
+            padding: 8px 14px;
+            font-size: 1rem;
+            cursor: pointer;
+            color: #2e7d32;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.3s;
+            border: none;
+        }
+        .topic-btn:hover {
+            background: #81c784;
+            color: white;
+        }
+        .topic-emoji {
+            font-size: 1.3rem;
+        }
+        .chat-box {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #fafafa;
+        }
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 1rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .user-message {
+            background: #e1f5fe;
+            align-self: flex-end;
+            text-align: right;
+            border-bottom-right-radius: 0;
+        }
+        .bot-message {
+            background: #f1f8e9;
+            align-self: flex-start;
+            border-bottom-left-radius: 0;
+        }
+        .input-area {
+            display: flex;
+            border-top: 1px solid #ccc;
+            padding: 12px;
+            background: #fafafa;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 10px 16px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            outline: none;
+        }
+        .input-area button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background: #66bb6a;
+            border: none;
+            color: white;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .input-area button:hover {
+            background: #4caf50;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="chat-header">Чатбот за психолошка едукација 🧠</div>
+
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Напиши прашање..." autocomplete="off" />
+        <button id="sendBtn">Прати</button>
+    </div>
+</div>
+
+<script>
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const topics = document.getElementById('topics');
+    appendMessage('Здраво! Јас сум твојот психо-пријател 😊 – подготвен да разговараме за чувства, тешки моменти или како да се чувствуваш подобро. Постави ми прашање кога сакаш.');
+
+    // OpenAI API key - замени со твојот вистински API клуч
+    const OPENAI_API_KEY = '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';
+
+    function appendMessage(text, sender = 'bot') {
+        const msg = document.createElement('div');
+        msg.className = 'message ' + (sender === 'user' ? 'user-message' : 'bot-message');
+        msg.textContent = text;
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function getBotResponse(prompt) {
+        appendMessage('Пишувам одговор...', 'bot');
+        try {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + OPENAI_API_KEY
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o-mini",
+                    messages: [
+                        { role: "system", content: "Ти си пријателски чатбот кој помага со психолошка поддршка и едукација. Одговараш на македонски јазик." },
+                        { role: "user", content: prompt }
+                    ],
+                    temperature: 0.7,
+                    max_tokens: 300
+                })
+            });
+            const data = await response.json();
+            chatBox.lastChild.textContent = ''; // тргни "Пишувам одговор..."
+            if (data.choices && data.choices.length > 0) {
+                appendMessage(data.choices[0].message.content.trim());
+            } else {
+                appendMessage('Се извинувам, не можам да одговорам сега. Пробај повторно.');
+            }
+        } catch (error) {
+            chatBox.lastChild.textContent = '';
+            appendMessage('Грешка при поврзување со API-то. Пробај повторно подоцна.');
+            console.error(error);
+        }
+    }
+
+    function sendMessage(text) {
+        if (!text) return;
+        appendMessage(text, 'user');
+        getBotResponse(text);
+    }
+
+    sendBtn.addEventListener('click', () => {
+        const text = userInput.value.trim();
+        if (text) {
+            sendMessage(text);
+            userInput.value = '';
+        }
+    });
+
+    userInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendBtn.click();
+        }
+    });
+
+    // Кога ќе кликнеш на тема од панелот, автоматски праќа прашање
+    topics.addEventListener('click', e => {
+        if (e.target.closest('.topic-btn')) {
+            const question = e.target.closest('.topic-btn').dataset.question;
+            if (question) {
+                sendMessage(question);
+            }
+        }
+    });
+
+    // Почетна порака
+    appendMessage('Здраво! Јас сум твојот пријателски психо-бот. Прашај ме нешто поврзано со чувства, стрес, љубомора, нервоза и слично. 🙂');
+</script>
+
+</body>
+</html>
